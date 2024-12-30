@@ -4,9 +4,9 @@ use std::io::{self, Write};
 use std::process::Command;
 
 fn main() {
+    proccess_input("clear");
     loop {
         info();
-        print!("> ");
         let _ = io::stdout().flush();
 
         let mut input = String::new();
@@ -22,12 +22,34 @@ fn main() {
 fn info() {
     match env::current_dir() {
         Ok(path) => {
-            // Extract the last component of the path (i.e., the current directory name)
             if let Some(dir_name) = path.file_name() {
-                println!(
-                    "{}",
-                    Colour::RGB(255, 140, 140).paint(dir_name.to_string_lossy())
-                );
+                let git_branch = get_git_branch();
+
+                let formatted_output;
+                if git_branch == "no git" {
+                    formatted_output = format!(
+                        "{} {} {} ",
+                        Colour::RGB(0, 100, 0).paint("➜"),
+                        Colour::RGB(0, 255, 255).paint(dir_name.to_string_lossy()),
+                        Colour::RGB(255, 140, 0).paint("✗")
+                    )
+                } else {
+                    let start_italic = "\x1b[3m";
+                    let end_italic = "\x1b[0m";
+
+                    formatted_output = format!(
+                        "{} {} {}{}{}{}{} {} ",
+                        Colour::RGB(0, 100, 0).paint("➜"),
+                        Colour::RGB(0, 255, 255).paint(dir_name.to_string_lossy()),
+                        Colour::RGB(0, 128, 128).paint("git["),
+                        start_italic,
+                        Colour::RGB(255, 140, 140).paint(git_branch),
+                        end_italic,
+                        Colour::RGB(0, 128, 128).paint("]"),
+                        Colour::RGB(255, 140, 0).paint("✗")
+                    );
+                }
+                print!("{}", formatted_output);
             } else {
                 println!("Error: Unable to get directory name.");
             }
@@ -35,6 +57,25 @@ fn info() {
         Err(e) => {
             eprintln!("Error getting current directory: {}", e);
         }
+    }
+}
+
+fn get_git_branch() -> String {
+    match Command::new("git")
+        .arg("rev-parse")
+        .arg("--abbrev-ref")
+        .arg("HEAD")
+        .output()
+    {
+        Ok(output) => {
+            if output.status.success() {
+                let branch = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                branch
+            } else {
+                "no git".to_string()
+            }
+        }
+        Err(_) => "no git".to_string(),
     }
 }
 
@@ -61,7 +102,7 @@ fn change_directory(args: &[&str]) {
     }
 
     if let Err(e) = env::set_current_dir(args[0]) {
-        println!("cd: {}: {}", args[0], e);
+        println!("{}", e);
     }
 }
 
@@ -76,11 +117,24 @@ fn execute_command(command: &str, args: &[&str]) {
     cmd.args(args);
 
     if args.last() == Some(&"&") {
-        cmd.spawn().expect("Failed to start process in background");
+        match cmd.spawn() {
+            Ok(_child) => {
+                println!("Process started in background.");
+            }
+            Err(e) => {
+                eprintln!("Failed to start process in background: {}", e);
+            }
+        }
     } else {
-        let status = cmd.status().expect("Failed to execute command");
-        if !status.success() {
-            eprintln!("Command failed with status: {}", status);
+        match cmd.status() {
+            Ok(status) => {
+                if !status.success() {
+                    eprintln!("Command failed with status: {}", status);
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to execute command: {}", e);
+            }
         }
     }
 }
