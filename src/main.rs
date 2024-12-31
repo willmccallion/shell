@@ -15,6 +15,7 @@ fn main() {
         if input.trim() == "exit" {
             break;
         }
+
         proccess_input(input.trim());
     }
 }
@@ -30,10 +31,10 @@ fn info() {
                 let start_italic = "\x1b[3m";
                 let end_italic = "\x1b[0m";
 
-                if git_branch != "none" {
-                    print!("{} ", Colour::RGB(153, 51, 255).paint("➜"));
-                } else {
+                if git_branch == "none" {
                     print!("{} ", Colour::RGB(76, 0, 153).paint("➜"));
+                } else {
+                    print!("{} ", Colour::RGB(153, 51, 255).paint("➜"));
                 }
                 formatted_output = format!(
                     "{} {}{}{}{}{} {} ",
@@ -88,8 +89,18 @@ fn proccess_input(input: &str) {
     match command {
         "cd" => change_directory(args),
         "pwd" => print_working_directory(),
+        "alias" => create_alias(args),
         _ => execute_command(command, args),
     }
+}
+
+fn create_alias(args: &[&str]) {
+    if args.is_empty() || args[1] == "=" {
+        println!("Alias error");
+        return;
+    }
+
+    let alias = args[0];
 }
 
 fn change_directory(args: &[&str]) {
