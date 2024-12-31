@@ -26,36 +26,33 @@ fn info() {
                 let git_branch = get_git_branch();
 
                 let formatted_output;
-                if git_branch == "no git" {
-                    formatted_output = format!(
-                        "{} {} {} ",
-                        Colour::RGB(0, 100, 0).paint("➜"),
-                        Colour::RGB(0, 255, 255).paint(dir_name.to_string_lossy()),
-                        Colour::RGB(255, 140, 0).paint("✗")
-                    )
-                } else {
-                    let start_italic = "\x1b[3m";
-                    let end_italic = "\x1b[0m";
 
-                    formatted_output = format!(
-                        "{} {} {}{}{}{}{} {} ",
-                        Colour::RGB(0, 100, 0).paint("➜"),
-                        Colour::RGB(0, 255, 255).paint(dir_name.to_string_lossy()),
-                        Colour::RGB(0, 128, 128).paint("git["),
-                        start_italic,
-                        Colour::RGB(255, 140, 140).paint(git_branch),
-                        end_italic,
-                        Colour::RGB(0, 128, 128).paint("]"),
-                        Colour::RGB(255, 140, 0).paint("✗")
-                    );
+                let start_italic = "\x1b[3m";
+                let end_italic = "\x1b[0m";
+
+                if git_branch != "none" {
+                    print!("{} ", Colour::RGB(153, 51, 255).paint("➜"));
+                } else {
+                    print!("{} ", Colour::RGB(76, 0, 153).paint("➜"));
                 }
+                formatted_output = format!(
+                    "{} {}{}{}{}{} {} ",
+                    Colour::RGB(0, 255, 255).paint(dir_name.to_string_lossy()),
+                    Colour::RGB(0, 128, 128).paint("git["),
+                    start_italic,
+                    Colour::RGB(255, 140, 140).paint(git_branch),
+                    end_italic,
+                    Colour::RGB(0, 128, 128).paint("]"),
+                    Colour::RGB(255, 140, 0).paint("✗")
+                );
+
                 print!("{}", formatted_output);
             } else {
                 println!("Error: Unable to get directory name.");
             }
         }
         Err(e) => {
-            eprintln!("Error getting current directory: {}", e);
+            eprintln!("{}", e);
         }
     }
 }
@@ -72,10 +69,10 @@ fn get_git_branch() -> String {
                 let branch = String::from_utf8_lossy(&output.stdout).trim().to_string();
                 branch
             } else {
-                "no git".to_string()
+                "none".to_string()
             }
         }
-        Err(_) => "no git".to_string(),
+        Err(_) => "none".to_string(),
     }
 }
 
@@ -122,7 +119,7 @@ fn execute_command(command: &str, args: &[&str]) {
                 println!("Process started in background.");
             }
             Err(e) => {
-                eprintln!("Failed to start process in background: {}", e);
+                eprintln!("{}", e);
             }
         }
     } else {
